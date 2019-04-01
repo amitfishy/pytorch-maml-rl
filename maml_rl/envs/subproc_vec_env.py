@@ -91,6 +91,7 @@ class SubprocVecEnv(gym.Env):
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
         observations, rewards, dones, task_ids, infos = zip(*results)
+        #print ('popo:',task_ids)
         return np.stack(observations), np.stack(rewards), np.stack(dones), task_ids, infos
 
     def reset(self):

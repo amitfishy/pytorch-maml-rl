@@ -5,6 +5,8 @@ import multiprocessing as mp
 from maml_rl.envs.subproc_vec_env import SubprocVecEnv
 from maml_rl.episode import BatchEpisodes
 
+import numpy as np
+
 def make_env(env_name):
     def _make_env():
         return gym.make(env_name)
@@ -36,7 +38,19 @@ class BatchSampler(object):
                 actions = actions_tensor.cpu().numpy()
             new_observations, rewards, dones, new_batch_ids, _ = self.envs.step(actions)
             episodes.append(observations, actions, rewards, batch_ids)
+
+            #print (observations)
+
+            #print (dones)
             observations, batch_ids = new_observations, new_batch_ids
+        # print ('-----------------------------------------------------returning-----------------------------------------------------')
+        # import numpy as np
+        # print (np.array(episodes.observations.cpu()))
+        # print ('Obs: ', episodes.observations.shape)
+        #print ('Act: ', episodes.actions.shape)
+        # print ('Rew: ', episodes.rewards.shape)
+        # print ('Mask: ', torch.mean(episodes.mask))
+        #print ('_action_list: ', len(episodes._actions_list['0']))
         return episodes
 
     def reset_task(self, task):

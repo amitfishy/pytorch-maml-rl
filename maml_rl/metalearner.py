@@ -7,6 +7,11 @@ from maml_rl.utils.torch_utils import (weighted_mean, detach_distribution,
                                        weighted_normalize)
 from maml_rl.utils.optimization import conjugate_gradient
 
+from maml_rl.episode import BatchEpisodes
+
+from collections import OrderedDict
+
+
 class MetaLearner(object):
     """Meta-learner
 
@@ -66,6 +71,19 @@ class MetaLearner(object):
         params = self.policy.update_params(loss, step_size=self.fast_lr,
             first_order=first_order)
 
+
+        # self.policy.load_state_dict(params, strict=True)
+        # print ('-----------------------------Params:-----------------------------')
+        # print (params)
+
+        # print ('-----------------------------Updated Params:-----------------------------')
+        # updated_params = OrderedDict()
+        # for (name, param) in self.policy.named_parameters():
+        #     updated_params[name] = param
+        # print(updated_params)
+
+        # exit()
+
         return params
 
     def sample(self, tasks, first_order=False):
@@ -83,6 +101,21 @@ class MetaLearner(object):
             valid_episodes = self.sampler.sample(self.policy, params=params,
                 gamma=self.gamma, device=self.device)
             episodes.append((train_episodes, valid_episodes))
+        return episodes
+
+    def sample_for_pretraining(self, tasks, first_order=False):
+        """Sample trajectories (before and after the update of the parameters) 
+        for all the tasks `tasks`.
+        """
+        episodes = BatchEpisodes(batch_size=0, gamma=self.gamma, device=self.device)
+        # episodes.check()
+        # exit()
+        for task in tasks:
+            self.sampler.reset_task(task)
+            train_episodes = self.sampler.sample(self.policy,
+                gamma=self.gamma, device=self.device)
+
+            episodes.extend_episodes(train_episodes)
         return episodes
 
     def kl_divergence(self, episodes, old_pis=None):

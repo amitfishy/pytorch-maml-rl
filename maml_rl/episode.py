@@ -19,6 +19,9 @@ class BatchEpisodes(object):
         self._returns = None
         self._mask = None
 
+    def check(self):
+
+        return
     @property
     def observations(self):
         if self._observations is None:
@@ -99,6 +102,21 @@ class BatchEpisodes(object):
             self._observations_list[batch_id].append(observation.astype(np.float32))
             self._actions_list[batch_id].append(action.astype(np.float32))
             self._rewards_list[batch_id].append(reward.astype(np.float32))
+
+    def extend_episodes(self, episodes):
+        self._observations = None
+        self._actions = None
+        self._rewards = None
+        self._returns = None
+        self._mask = None
+
+        self.batch_size = self.batch_size + episodes.batch_size
+        for i in range(episodes.batch_size):
+            self._observations_list.append(episodes._observations_list[i])
+            self._actions_list.append(episodes._actions_list[i])
+            self._rewards_list.append(episodes._rewards_list[i])
+
+        return
 
     def __len__(self):
         return max(map(len, self._rewards_list))
