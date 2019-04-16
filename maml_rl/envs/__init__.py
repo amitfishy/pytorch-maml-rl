@@ -66,3 +66,24 @@ register(
     entry_point='maml_rl.envs.navigation:Navigation2DEnv',
     max_episode_steps=100
 )
+
+# Variable Task Stuff
+# ----------------------------------------
+
+register(
+    'CartPoleVT-v0',
+    entry_point='maml_rl.envs.variable_tasks.cartpole:CartPoleVTEnv',
+    max_episode_steps=100
+)
+
+register(
+    'MountainCarContinuousVT-v0',
+    entry_point='maml_rl.envs.variable_tasks.continuous_mountain_car:Continuous_MountainCarVTEnv',
+    max_episode_steps=200
+)
+
+register(
+    'AcrobotVT-v1',
+    entry_point='maml_rl.envs.variable_tasks.acrobot:AcrobotVTEnv',
+    max_episode_steps=200
+)

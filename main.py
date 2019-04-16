@@ -19,20 +19,25 @@ from tensorboardX import SummaryWriter
 import time
 
 
-experiment = Experiment(api_key="wD61O90Y34KruZHAyHH7bqWRw", project_name="comp767-maml", workspace="amitfishy")
+# experiment = Experiment(api_key="wD61O90Y34KruZHAyHH7bqWRw", project_name="comp767-maml", workspace="amitfishy")
 
 def total_rewards(episodes_rewards, gamma, aggregation=torch.mean):
-    discount_matrix = torch.ones_like(episodes_rewards[0])
+    discount_matrix = torch.ones(max([rewards.shape[0] for rewards in episodes_rewards]), episodes_rewards[0].shape[1]).to(episodes_rewards[0].device)
     for i in range(discount_matrix.shape[0]):
         discount_matrix[i, :] = discount_matrix[i, :] * gamma**i
-    rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards * discount_matrix, dim=0))
+    # print('RSHAPE:',len(episodes_rewards))
+    # print('DMSHAPE:',discount_matrix.shape)
+    # for i,rewards in enumerate(episodes_rewards):
+    #     print (i, rewards.shape)
+    #     print (rewards)
+    rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards * discount_matrix[:rewards.shape[0], :rewards.shape[1]], dim=0))
         for rewards in episodes_rewards], dim=0))
     return rewards.item()
 
 def train_meta_learning_model(args):
     continuous_actions = (args.env_name in ['AntVel-v1', 'AntDir-v1',
         'AntPos-v0', 'HalfCheetahVel-v1', 'HalfCheetahDir-v1',
-        '2DNavigation-v0'])
+        '2DNavigation-v0', 'MountainCarContinuousVT-v0'])
 
     # writer = SummaryWriter('./logs/{0}'.format(args.output_folder + '_metalearned'))
     save_folder = './saves/{0}'.format(args.output_folder + '_metalearned')
@@ -58,10 +63,18 @@ def train_meta_learning_model(args):
     baseline = LinearFeatureBaseline(
         int(np.prod(sampler.envs.observation_space.shape)))
 
+    #load pretrained model
+    cont_from_batch = 0
+    if args.start_from_batch != -1:
+        metalearned_model = os.path.join(save_folder, 'policy-{0}.pt'.format(args.start_from_batch-1))
+        if os.path.exists(metalearned_model):
+            policy.load_state_dict(torch.load(metalearned_model))
+            cont_from_batch = args.start_from_batch
+
     metalearner = MetaLearner(sampler, policy, baseline, gamma=args.gamma,
         fast_lr=args.fast_lr, tau=args.tau, device=args.device)
 
-    for batch in range(args.num_batches):
+    for batch in range(cont_from_batch, args.num_batches):
         print ('Currently processing Batch: {}'.format(batch+1))
 
         task_sampling_time = time.time()
@@ -101,7 +114,7 @@ def train_meta_learning_model(args):
 def train_pretrained_model(args):
     continuous_actions = (args.env_name in ['AntVel-v1', 'AntDir-v1',
         'AntPos-v0', 'HalfCheetahVel-v1', 'HalfCheetahDir-v1',
-        '2DNavigation-v0'])
+        '2DNavigation-v0', 'MountainCarContinuousVT-v0'])
 
     # writer = SummaryWriter('./logs/{0}'.format(args.output_folder + '_pretrained'))
     save_folder = './saves/{0}'.format(args.output_folder + '_pretrained')
@@ -112,7 +125,8 @@ def train_pretrained_model(args):
         config.update(device=args.device.type)
         json.dump(config, f, indent=2)
 
-    sampler = BatchSampler(args.env_name, batch_size=args.fast_batch_size,
+    #batch_size=2*args.fast_batch_size to match the amount of data used in meta-learning
+    sampler = BatchSampler(args.env_name, batch_size=2*args.fast_batch_size,
         num_workers=args.num_workers)
     if continuous_actions:
         policy = NormalMLPPolicy(
@@ -127,10 +141,18 @@ def train_pretrained_model(args):
     baseline = LinearFeatureBaseline(
         int(np.prod(sampler.envs.observation_space.shape)))
 
+    #load pretrained model
+    cont_from_batch = 0
+    if args.start_from_batch != -1:
+        pretrained_model = os.path.join(save_folder, 'policy-{0}.pt'.format(args.start_from_batch-1))
+        if os.path.exists(pretrained_model):
+            policy.load_state_dict(torch.load(pretrained_model))
+            cont_from_batch = args.start_from_batch
+
     metalearner = MetaLearner(sampler, policy, baseline, gamma=args.gamma,
         fast_lr=args.fast_lr, tau=args.tau, device=args.device)
 
-    for batch in range(args.num_batches):
+    for batch in range(cont_from_batch, args.num_batches):
         print ('Currently processing Batch: {}'.format(batch+1))
 
         task_sampling_time = time.time()
@@ -167,7 +189,7 @@ def train_pretrained_model(args):
 def k_shot_experiments(args):
     continuous_actions = (args.env_name in ['AntVel-v1', 'AntDir-v1',
         'AntPos-v0', 'HalfCheetahVel-v1', 'HalfCheetahDir-v1',
-        '2DNavigation-v0'])
+        '2DNavigation-v0', 'MountainCarContinuousVT-v0'])
 
 
     sampler = BatchSampler(args.env_name, batch_size=args.fast_batch_size,
@@ -207,23 +229,49 @@ def k_shot_experiments(args):
     metalearned_model = os.path.join(save_folder_metalearned, 'policy-{0}.pt'.format(args.num_batches-1))
     policy_metalearned.load_state_dict(torch.load(metalearned_model))
 
-    pretrained_tester = k_shot_tester(args.K, policy_pretrained, args.K_shot_batch_size, 'Pretrained', args)
+    results_folder = './saves/{0}'.format(args.output_folder + '_results')
+    if not os.path.exists(results_folder):
+        os.makedirs(results_folder)
+    kshot_fig_path1 = os.path.join(results_folder, 'kshot_testing')
+    kshot_fig_path2 = os.path.join(results_folder, 'ml_pre_diff')
+    result_data_path = os.path.join(results_folder, 'data_')
+
+    pretrained_tester = k_shot_tester(args.K_shot_batch_num, policy_pretrained, args.K_shot_batch_size, args.K_shot_num_tasks, 'Pretrained', args)
     avg_discounted_returns_pretrained = pretrained_tester.run_k_shot_exp()
-    metalearned_tester = k_shot_tester(args.K, policy_metalearned, args.K_shot_batch_size, 'MetaLearned', args)
+    metalearned_tester = k_shot_tester(args.K_shot_batch_num, policy_metalearned, args.K_shot_batch_size, args.K_shot_num_tasks, 'MetaLearned', args)
     avg_discounted_returns_metalearned = metalearned_tester.run_k_shot_exp()
-    random_tester = k_shot_tester(args.K, policy_random, args.K_shot_batch_size, 'Random', args)
+    random_tester = k_shot_tester(args.K_shot_batch_num, policy_random, args.K_shot_batch_size, args.K_shot_num_tasks, 'Random', args)
     avg_discounted_returns_random = random_tester.run_k_shot_exp()
 
-    plt.figure('K Shot Testing Curves')
-    plt.plot([i for i in range(args.K + 1)], avg_discounted_returns_pretrained, color=np.array([0.,0.,1.]), label='Pre-Trained')
-    plt.plot([i for i in range(args.K + 1)], avg_discounted_returns_metalearned, color=np.array([0.,1.,0.]), label='Meta-Learned')
-    plt.plot([i for i in range(args.K + 1)], avg_discounted_returns_random, color=np.array([0.,0.,0.]), label='Random')
-    plt.ylabel('K Shot Iteration Number')
-    plt.xlabel('Average Discounted Return')
-    plt.title('K Shot Testing Curves')
-    plt.legend(loc='upper left')
-    plt.show()
+    plt.figure('K Shot: Testing Curves')
+    # plt.plot([i for i in range(args.K_shot_batch_num + 1)], avg_discounted_returns_pretrained, color=np.array([0.,0.,1.]), label='Pre-Trained')
+    # plt.plot([i for i in range(args.K_shot_batch_num + 1)], avg_discounted_returns_metalearned, color=np.array([0.,1.,0.]), label='Meta-Learned')
+    # plt.plot([i for i in range(args.K_shot_batch_num + 1)], avg_discounted_returns_random, color=np.array([0.,0.,0.]), label='Random')
+    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_pretrained, 0).tolist(), torch.std(avg_discounted_returns_pretrained, 0).tolist(), color=np.array([0.,0.,1.]), label='Pre-Trained', capsize=5, capthick=2)
+    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_metalearned, 0).tolist(), torch.std(avg_discounted_returns_metalearned, 0).tolist(), color=np.array([0.,1.,0.]), label='Meta-Learned', capsize=5, capthick=2)
+    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_random, 0).tolist(), torch.std(avg_discounted_returns_random, 0).tolist(), color=np.array([0.,0.,0.]), label='Random', capsize=5, capthick=2)
 
+    plt.xlabel('Gradient Descent Iteration Number')
+    plt.ylabel('Average Discounted Return')
+    plt.title('K Shot: Testing Curves')
+    plt.legend(loc='upper left')
+    plt.savefig(kshot_fig_path1)
+    # plt.show()
+
+
+    plt.figure('K Shot: Difference between Metalearned and Pretrained')
+
+    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_metalearned-avg_discounted_returns_pretrained, 0).tolist(), torch.std(avg_discounted_returns_metalearned-avg_discounted_returns_pretrained, 0).tolist(), color=np.array([0.,0.,0.]), capsize=5, capthick=2)
+
+    plt.xlabel('Gradient Descent Iteration Number')
+    plt.ylabel('Average Discounted Return Difference')
+    plt.title('K Shot: Difference between Metalearned and Pretrained')
+    plt.savefig(kshot_fig_path2)
+    # plt.show()
+
+    #save torch tensor results to combine with other experiments
+    torch.save(avg_discounted_returns_pretrained, result_data_path + 'pretrained')
+    torch.save(avg_discounted_returns_metalearned, result_data_path + 'metalearned')
     return
 
 
@@ -296,17 +344,20 @@ if __name__ == '__main__':
         help='number of workers for trajectories sampling')
     parser.add_argument('--device', type=str, default='cpu',
         help='set the device (cpu or cuda)')
-
+    parser.add_argument('--start-from-batch', type=int, default=-1,
+        help='start training from this batch number - the model file should exist in save folder')
 
 
 
 
     # General Arguments for K shot testing
     # Note that the exp type should be KSHOT for it
-    parser.add_argument('--K', type=int, default=5,
+    parser.add_argument('--K-shot-batch-num', type=int, default=5,
         help='K shots for testing')
     parser.add_argument('--K-shot-batch-size', type=int, default=20,
-        help='Number of episodes in each shot')
+        help='Number of episodes in each batch')
+    parser.add_argument('--K-shot-num-tasks', type=int, default=50,
+        help='Number of tasks to test over to get variance')
 
 
 
@@ -330,7 +381,7 @@ if __name__ == '__main__':
     "ls_max_steps": args.ls_max_steps,
     "ls_backtrack_ratio": args.ls_backtrack_ratio
     }
-    experiment.log_parameters(hyper_params)
+    # experiment.log_parameters(hyper_params)
     
     # Create logs and saves folder if they don't exist
     if not os.path.exists('./logs'):

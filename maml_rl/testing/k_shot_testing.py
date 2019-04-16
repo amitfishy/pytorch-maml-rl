@@ -11,11 +11,12 @@ from torch.nn.utils.convert_parameters import (vector_to_parameters, parameters_
 import torch
 
 class k_shot_tester(object):
-	def __init__(self, k, policy, batch_size, k_shot_exp_name, args):
-		self.k = k
+	def __init__(self, batch_num, policy, batch_size, num_tasks, k_shot_exp_name, args):
+		self.batch_num = batch_num
 		self.policy = policy
 		#self.params = params
 		self.batch_size = batch_size
+		self.num_tasks = num_tasks
 		self.k_shot_exp_name = k_shot_exp_name
 		self.first_order = args.first_order
 		self.gamma = args.gamma
@@ -46,22 +47,29 @@ class k_shot_tester(object):
 		return mean_discounted_return
 
 	def run_k_shot_exp(self):
-		task = self.sampler.sample_tasks(num_tasks=2)
-		self.sampler.reset_task(task[0])
+		tasks = self.sampler.sample_tasks(num_tasks=self.num_tasks)
+		mean_discounted_returns_all_tasks = []
+		starting_policy = self.policy
+		print ()
+		print ('K SHOT TESTING FOR: ' +  self.k_shot_exp_name)
+		for num_task in range(self.num_tasks):
+			print ('Currently processing Task Number: {}'.format(num_task+1))
+			self.policy = starting_policy
+			self.metalearner.policy = starting_policy
+			self.sampler.reset_task(tasks[num_task])
+			mean_discounted_returns_single_task = []
 
-		mean_discounted_returns = []
-
-		for batch in range(self.k):
-			print ('Currently processing Test Batch: {}'.format(batch+1))
-
+			for batch in range(self.batch_num):
+				# print ('Currently processing Test Batch: {}'.format(batch+1))
+				train_episodes = self.sampler.sample(self.policy, gamma=self.gamma, device=self.device)
+				self.params = self.metalearner.adapt(train_episodes, first_order=self.first_order)
+				self.policy.load_state_dict(self.params, strict=True)
+				self.metalearner.policy = self.policy
+				#calculate discounted rewards (returns) from start
+				mean_discounted_returns_single_task.append(self.get_mean_discounted_return(train_episodes.rewards))
 			train_episodes = self.sampler.sample(self.policy, gamma=self.gamma, device=self.device)
-			self.params = self.metalearner.adapt(train_episodes, first_order=self.first_order)
-			self.policy.load_state_dict(self.params, strict=True)
-			#calculate discounted rewards (returns) from start
-			mean_discounted_returns.append(self.get_mean_discounted_return(train_episodes.rewards))
+			mean_discounted_returns_single_task.append(self.get_mean_discounted_return(train_episodes.rewards))
 
-		train_episodes = self.sampler.sample(self.policy, gamma=self.gamma, device=self.device)
-		mean_discounted_returns.append(self.get_mean_discounted_return(train_episodes.rewards))
+			mean_discounted_returns_all_tasks.append(mean_discounted_returns_single_task)
 
-		# self.plot_stuff(avg_discounted_returns)
-		return mean_discounted_returns
+		return torch.Tensor(mean_discounted_returns_all_tasks).to(self.device)
