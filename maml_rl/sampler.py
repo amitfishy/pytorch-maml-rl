@@ -58,6 +58,6 @@ class BatchSampler(object):
         reset = self.envs.reset_task(tasks)
         return all(reset)
 
-    def sample_tasks(self, num_tasks):
-        tasks = self._env.unwrapped.sample_tasks(num_tasks)
+    def sample_tasks(self, num_tasks, sampling_type = 'rand', points_per_dim = -1):
+        tasks = self._env.unwrapped.sample_tasks(num_tasks, sampling_type, points_per_dim)
         return tasks

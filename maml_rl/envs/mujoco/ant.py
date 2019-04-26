@@ -86,9 +86,22 @@ class AntVelEnv(AntEnv):
             task=self._task)
         return (observation, reward, done, infos)
 
-    def sample_tasks(self, num_tasks):
-        velocities = self.np_random.uniform(0.0, 3.0, size=(num_tasks,))
-        tasks = [{'velocity': velocity} for velocity in velocities]
+    def sample_tasks(self, num_tasks, sampling_type, points_per_dim=-1):
+        if sampling_type == 'rand':
+            velocities = self.np_random.uniform(0.0, 3.0, size=(num_tasks,))
+            tasks = [{'velocity': velocity} for velocity in velocities]
+        elif sampling_type == 'uni':
+            assert int(num_tasks) == int(points_per_dim), 'Number of tasks(mbs) should match the points per dimension if using `uni`'
+            velocities = np.linspace(0.0, 3.0, num=points_per_dim)
+            tasks = [{'velocity': velocity} for velocity in velocities]
+        elif sampling_type == 'unirand':
+            assert int(num_tasks) == int(points_per_dim), 'Number of tasks(mbs) should match the points per dimension if using `unirand`'
+            velocities, velocities_step = np.linspace(0.0, 3.0, endpoint=False, retstep=True, num=points_per_dim)
+
+            velocities = velocities + np.random.uniform(0, velocities_step, size=velocities.shape)
+            tasks = [{'velocity': velocity} for velocity in velocities]
+        else:
+            assert False, 'Sampling type should be `uni` or `rand` or `unirand`. Given: `{}`'.format(sampling_type)
         return tasks
 
     def reset_task(self, task):

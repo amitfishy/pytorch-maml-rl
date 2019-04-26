@@ -1,58 +1,61 @@
 #!/bin/bash
 
-# #cartpole experiments
-# python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 80 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole-vt-nb100/mbs80fbs10 --device cuda
 
-# python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 20 --meta-batch-size 40 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole-vt-nb100/mbs40fbs20 --device cuda
+python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-contmountcar/rand --device cuda --sampling-type rand --testing-mbs 5 --testing-fbs 5 --random-seed 62
+python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-contmountcar/uni --device cuda --sampling-type uni --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 62
+python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-contmountcar/unirand --device cuda --sampling-type unirand --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 62
 
-# python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 40 --meta-batch-size 20 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole-vt-nb100/mbs20fbs40 --device cuda
-
-
-
-# #acrobot experiments
-# python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 80 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot-vt-nb100/mbs80fbs10 --device cuda
-
-# python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 20 --meta-batch-size 40 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot-vt-nb100/mbs40fbs20 --device cuda
-
-# python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 40 --meta-batch-size 20 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot-vt-nb100/mbs20fbs40 --device cuda
+python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-contmountcar/rand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-contmountcar/uni --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-contmountcar/unirand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
 
 
 
-# #continuous mountain car
-# python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.01 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 80 --num-layers 2 --hidden-size 100 --num-batches 20 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cont-mount-car-vt-nb20/mbs80fbs10 --device cuda
+python main.py --env-name 2DNavigation-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 30 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-2dnav-ppd5/rand --device cuda --sampling-type rand --testing-mbs 5 --testing-fbs 5 --random-seed 77
+python main.py --env-name 2DNavigation-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 30 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-2dnav-ppd5/uni --device cuda --sampling-type uni --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 77
+python main.py --env-name 2DNavigation-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 30 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-2dnav-ppd5/unirand --device cuda --sampling-type unirand --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 77
 
-# python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.01 --max-kl 0.01 --fast-batch-size 20 --meta-batch-size 40 --num-layers 2 --hidden-size 100 --num-batches 20 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cont-mount-car-vt-nb20/mbs40fbs20 --device cuda
-
-# python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.01 --max-kl 0.01 --fast-batch-size 40 --meta-batch-size 20 --num-layers 2 --hidden-size 100 --num-batches 20 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cont-mount-car-vt-nb20/mbs20fbs40 --device cuda
-
-
-
+python main.py --env-name 2DNavigation-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-2dnav-ppd5/rand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name 2DNavigation-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-2dnav-ppd5/uni --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name 2DNavigation-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-2dnav-ppd5/unirand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
 
 
 
-#kshot experiments
+python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 30 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole/rand --device cuda --sampling-type rand --testing-mbs 5 --testing-fbs 5 --random-seed 92 --start-from-batch 10
+python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 30 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole/uni --device cuda --sampling-type uni --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 92 --start-from-batch 10
+python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 30 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole/unirand --device cuda --sampling-type unirand --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 92 --start-from-batch 10
 
-# #cartpole experiments
-# python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.025 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 80 --num-layers 2 --hidden-size 100 --num-batches 5 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole-vt-nb100/mbs80fbs10 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
-
-# python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.025 --max-kl 0.01 --fast-batch-size 20 --meta-batch-size 40 --num-layers 2 --hidden-size 100 --num-batches 5 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole-vt-nb100/mbs40fbs20 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
-
-# python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.025 --max-kl 0.01 --fast-batch-size 40 --meta-batch-size 20 --num-layers 2 --hidden-size 100 --num-batches 5 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole-vt-nb100/mbs20fbs40 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
-
-
-
-# #acrobot experiments
-# python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.025 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 80 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot-vt-nb100/mbs80fbs10 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
-
-# python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.025 --max-kl 0.01 --fast-batch-size 20 --meta-batch-size 40 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot-vt-nb100/mbs40fbs20 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
-
-# python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.025 --max-kl 0.01 --fast-batch-size 40 --meta-batch-size 20 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot-vt-nb100/mbs20fbs40 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
+python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole/rand --device cuda --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole/uni --device cuda --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name CartPoleVT-v0 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 5 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cartpole/unirand --device cuda --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
 
 
 
-#continuous mountain car
-python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.01 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 80 --num-layers 2 --hidden-size 100 --num-batches 20 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cont-mount-car-vt-nb20/mbs80fbs10 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
+python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 50 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot/rand --device cuda --sampling-type rand --testing-mbs 5 --testing-fbs 5 --random-seed 26 --start-from-batch 30
+python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 50 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot/uni --device cuda --sampling-type uni --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 26 --start-from-batch 30
+python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 50 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot/unirand --device cuda --sampling-type unirand --points-per-dim 5 --testing-mbs 5 --testing-fbs 5 --random-seed 26 --start-from-batch 30
 
-python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.01 --max-kl 0.01 --fast-batch-size 20 --meta-batch-size 40 --num-layers 2 --hidden-size 100 --num-batches 20 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cont-mount-car-vt-nb20/mbs40fbs20 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
+python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot/rand --device cuda --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot/uni --device cuda --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name AcrobotVT-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 25 --num-layers 2 --hidden-size 100 --num-batches 10 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-acrobot/unirand --device cuda --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
 
-python main.py --env-name MountainCarContinuousVT-v0 --num-workers 8 --fast-lr 0.01 --max-kl 0.01 --fast-batch-size 40 --meta-batch-size 20 --num-layers 2 --hidden-size 100 --num-batches 20 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-cont-mount-car-vt-nb20/mbs20fbs40 --device cuda --exp-type KSHOT --K-shot-num-tasks 40
+
+python main.py --env-name HalfCheetahVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 4 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-halfcheevel/rand --device cuda --sampling-type rand --testing-mbs 5 --testing-fbs 5 --random-seed 134
+python main.py --env-name HalfCheetahVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 4 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-halfcheevel/uni --device cuda --sampling-type uni --points-per-dim 4 --testing-mbs 5 --testing-fbs 5 --random-seed 134
+python main.py --env-name HalfCheetahVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 4 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-halfcheevel/unirand --device cuda --sampling-type unirand --points-per-dim 4 --testing-mbs 5 --testing-fbs 5 --random-seed 134
+
+python main.py --env-name HalfCheetahVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 4 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-halfcheevel/rand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name HalfCheetahVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 4 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-halfcheevel/uni --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name HalfCheetahVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 4 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-halfcheevel/unirand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+
+
+
+python main.py --env-name AntVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 8 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-antvel/rand --device cuda --sampling-type rand --testing-mbs 5 --testing-fbs 5 --random-seed 93 --start-from-batch 30
+python main.py --env-name AntVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 8 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-antvel/uni --device cuda --sampling-type uni --points-per-dim 8 --testing-mbs 5 --testing-fbs 5 --random-seed 93 --start-from-batch 30
+python main.py --env-name AntVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 8 --num-layers 2 --hidden-size 100 --num-batches 100 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-antvel/unirand --device cuda --sampling-type unirand --points-per-dim 8 --testing-mbs 5 --testing-fbs 5 --random-seed 93 --start-from-batch 30
+
+python main.py --env-name AntVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 8 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-antvel/rand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name AntVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 8 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-antvel/uni --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+python main.py --env-name AntVel-v1 --num-workers 8 --fast-lr 0.05 --max-kl 0.01 --fast-batch-size 10 --meta-batch-size 8 --num-layers 2 --hidden-size 100 --num-batches 15 --gamma 0.99 --tau 1.0 --cg-damping 1e-5 --ls-max-steps 15 --output-folder maml-antvel/unirand --device cuda  --exp-type KSHOT --K-shot-batch-num 3 --K-shot-batch-size 40 --K-shot-num-tasks 20
+
+

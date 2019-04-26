@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import json
 import matplotlib.pyplot as plt
+import pickle
 
 from maml_rl.metalearner import MetaLearner
 from maml_rl.policies import CategoricalMLPPolicy, NormalMLPPolicy
@@ -19,22 +20,45 @@ from tensorboardX import SummaryWriter
 import time
 
 
-# experiment = Experiment(api_key="wD61O90Y34KruZHAyHH7bqWRw", project_name="comp767-maml", workspace="amitfishy")
+#refer to comet ml for these 3 entries
+api_key = 'put-key-here'
+project_name = 'proj-name'
+workspace = 'workspace'
+experiment = Experiment(api_key=api_key, project_name=project_name, workspace=workspace)
 
 def total_rewards(episodes_rewards, gamma, aggregation=torch.mean):
-    discount_matrix = torch.ones(max([rewards.shape[0] for rewards in episodes_rewards]), episodes_rewards[0].shape[1]).to(episodes_rewards[0].device)
-    for i in range(discount_matrix.shape[0]):
-        discount_matrix[i, :] = discount_matrix[i, :] * gamma**i
+    # discount_matrix = torch.ones(max([rewards.shape[0] for rewards in episodes_rewards]), episodes_rewards[0].shape[1]).to(episodes_rewards[0].device)
+    # for i in range(discount_matrix.shape[0]):
+    #     discount_matrix[i, :] = discount_matrix[i, :] * gamma**i
     # print('RSHAPE:',len(episodes_rewards))
     # print('DMSHAPE:',discount_matrix.shape)
     # for i,rewards in enumerate(episodes_rewards):
     #     print (i, rewards.shape)
     #     print (rewards)
-    rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards * discount_matrix[:rewards.shape[0], :rewards.shape[1]], dim=0))
+    # rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards * discount_matrix[:rewards.shape[0], :rewards.shape[1]], dim=0))
+    #     for rewards in episodes_rewards], dim=0))
+    rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards , dim=0))
         for rewards in episodes_rewards], dim=0))
     return rewards.item()
 
+
+
 def train_meta_learning_model(args):
+    # import matplotlib.pyplot as plt
+    # import matplotlib.animation as animation
+    # from matplotlib import style    
+
+    # style.use('fivethirtyeight')
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(1,1,1)    
+    # xs = []
+    # ys = []
+    # def animate(i):
+    #     ax1.clear()
+    #     ax1.plot(xs, ys)
+    rewards_before_ml = []
+    rewards_after_ml = []
+
     continuous_actions = (args.env_name in ['AntVel-v1', 'AntDir-v1',
         'AntPos-v0', 'HalfCheetahVel-v1', 'HalfCheetahDir-v1',
         '2DNavigation-v0', 'MountainCarContinuousVT-v0'])
@@ -50,6 +74,7 @@ def train_meta_learning_model(args):
 
     sampler = BatchSampler(args.env_name, batch_size=args.fast_batch_size,
         num_workers=args.num_workers)
+    torch.manual_seed(args.random_seed)
     if continuous_actions:
         policy = NormalMLPPolicy(
             int(np.prod(sampler.envs.observation_space.shape)),
@@ -78,7 +103,7 @@ def train_meta_learning_model(args):
         print ('Currently processing Batch: {}'.format(batch+1))
 
         task_sampling_time = time.time()
-        tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
+        tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size, sampling_type=args.sampling_type, points_per_dim=args.points_per_dim)
         task_sampling_time = time.time() - task_sampling_time
 
         episode_generating_time = time.time()
@@ -94,19 +119,46 @@ def train_meta_learning_model(args):
         print ('Tasking Sampling Time: {}'.format(task_sampling_time))
         print ('Episode Generating Time: {}'.format(episode_generating_time))
         print ('Learning Step Time: {}'.format(learning_step_time))
+        reward_before_ml = total_rewards([ep.rewards for ep, _ in episodes], args.gamma)
+        reward_after_ml = total_rewards([ep.rewards for _, ep in episodes], args.gamma)
+        print ('Before Update: {} After Update: {}'.format(reward_before_ml, reward_after_ml))
+        # experiment.log_metric("Avg Reward Before Update (MetaLearned)", reward_before_ml)
+        experiment.log_metric("Avg Reward", reward_after_ml, batch+1)
 
-        # Tensorboard
-        # writer.add_scalar('total_rewards/before_update',
-        #     total_rewards([ep.rewards for ep, _ in episodes]), batch)
-        # writer.add_scalar('total_rewards/after_update',
-        #     total_rewards([ep.rewards for _, ep in episodes]), batch)
-        experiment.log_metric("Avg Disc Reward Before Update (MetaLearned)", total_rewards([ep.rewards for ep, _ in episodes], args.gamma), batch+1)
-        experiment.log_metric("Avg Disc Reward After Update (MetaLearned)", total_rewards([ep.rewards for _, ep in episodes], args.gamma), batch+1)
-
+        rewards_before_ml.append(reward_before_ml)
+        rewards_after_ml.append(reward_after_ml)
+        # xs.append(batch+1)
+        # ys.append(total_rewards([ep.rewards for _, ep in episodes], args.gamma))
+        # ani = animation.FuncAnimation(fig, animate, interval=1000)
+        # plt.savefig('navg_baseline_monitor')
         # Save policy network
         with open(os.path.join(save_folder,
                 'policy-{0}.pt'.format(batch)), 'wb') as f:
             torch.save(metalearner.policy.state_dict(), f)
+
+    # tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
+    # episodes = metalearner.sample(tasks, first_order=args.first_order)
+    # print("Avg Reward After Update (MetaLearned)", total_rewards([ep.rewards for _, ep in episodes], args.gamma))
+
+    testing_sampler = BatchSampler(args.env_name, batch_size=args.testing_fbs,
+        num_workers=args.num_workers)
+    testing_metalearner = MetaLearner(testing_sampler, metalearner.policy, baseline, gamma=args.gamma,
+        fast_lr=args.fast_lr, tau=args.tau, device=args.device)
+    test_tasks = testing_sampler.sample_tasks(num_tasks=args.testing_mbs, sampling_type='rand', points_per_dim=-1)
+    test_episodes = testing_metalearner.sample(test_tasks, first_order=args.first_order, no_update=True)
+    test_reward = total_rewards([ep.rewards for ep in test_episodes], args.gamma)
+    print('-------------------------------------------------')
+    print ('Test Time reward is: ' + str(test_reward))
+    print('-------------------------------------------------')
+
+    pickle_reward_data_file = os.path.join(save_folder, 'reward_data.pkl')
+    with open(pickle_reward_data_file, 'wb') as f:
+        pickle.dump(rewards_before_ml, f)
+        pickle.dump(rewards_after_ml, f)
+
+    pickle_final_reward_file = os.path.join(save_folder, 'final_reward.pkl')
+    with open(pickle_final_reward_file, 'wb') as f:
+        pickle.dump(test_reward, f)
 
     return
 
@@ -177,7 +229,7 @@ def train_pretrained_model(args):
         #     total_rewards([ep.rewards for ep, _ in episodes]), batch)
         # writer.add_scalar('total_rewards/after_update',
         #     total_rewards([ep.rewards for _, ep in episodes]), batch)
-        experiment.log_metric("Avg Disc Reward (Pretrained)", total_rewards([episodes.rewards], args.gamma), batch+1)
+        # experiment.log_metric("Avg Disc Reward (Pretrained)", total_rewards([episodes.rewards], args.gamma), batch+1)
 
         # Save policy network
         with open(os.path.join(save_folder,
@@ -221,35 +273,40 @@ def k_shot_experiments(args):
             sampler.envs.action_space.n,
             hidden_sizes=(args.hidden_size,) * args.num_layers)
 
-    save_folder_pretrained = './saves/{0}'.format(args.output_folder + '_pretrained')
-    pretrained_model = os.path.join(save_folder_pretrained, 'policy-{0}.pt'.format(args.num_batches-1))
-    policy_pretrained.load_state_dict(torch.load(pretrained_model))
+    # save_folder_pretrained = './saves/{0}'.format(args.output_folder + '_pretrained')
+    # pretrained_model = os.path.join(save_folder_pretrained, 'policy-{0}.pt'.format(args.num_batches-1))
+    # policy_pretrained.load_state_dict(torch.load(pretrained_model))
     
     save_folder_metalearned = './saves/{0}'.format(args.output_folder + '_metalearned')
     metalearned_model = os.path.join(save_folder_metalearned, 'policy-{0}.pt'.format(args.num_batches-1))
     policy_metalearned.load_state_dict(torch.load(metalearned_model))
 
+    # metalearned_tester = k_shot_tester(args.K_shot_batch_num, policy_metalearned, args.K_shot_batch_size, args.K_shot_num_tasks, 'MetaLearned', args)
+    # avg_discounted_returns_metalearned = metalearned_tester.run_k_shot_exp()
+    # print('Metalearned KSHOT result: ', avg_discounted_returns_metalearned)
+    # print('Mean: ', torch.mean(avg_discounted_returns_metalearned, 0))
     results_folder = './saves/{0}'.format(args.output_folder + '_results')
     if not os.path.exists(results_folder):
         os.makedirs(results_folder)
     kshot_fig_path1 = os.path.join(results_folder, 'kshot_testing')
-    kshot_fig_path2 = os.path.join(results_folder, 'ml_pre_diff')
+    # kshot_fig_path2 = os.path.join(results_folder, 'ml_pre_diff')
     result_data_path = os.path.join(results_folder, 'data_')
 
-    pretrained_tester = k_shot_tester(args.K_shot_batch_num, policy_pretrained, args.K_shot_batch_size, args.K_shot_num_tasks, 'Pretrained', args)
-    avg_discounted_returns_pretrained = pretrained_tester.run_k_shot_exp()
     metalearned_tester = k_shot_tester(args.K_shot_batch_num, policy_metalearned, args.K_shot_batch_size, args.K_shot_num_tasks, 'MetaLearned', args)
     avg_discounted_returns_metalearned = metalearned_tester.run_k_shot_exp()
-    random_tester = k_shot_tester(args.K_shot_batch_num, policy_random, args.K_shot_batch_size, args.K_shot_num_tasks, 'Random', args)
-    avg_discounted_returns_random = random_tester.run_k_shot_exp()
+    # pretrained_tester = k_shot_tester(args.K_shot_batch_num, policy_pretrained, args.K_shot_batch_size, args.K_shot_num_tasks, 'Pretrained', args)
+    # avg_discounted_returns_pretrained = pretrained_tester.run_k_shot_exp()
+
+    # random_tester = k_shot_tester(args.K_shot_batch_num, policy_random, args.K_shot_batch_size, args.K_shot_num_tasks, 'Random', args)
+    # avg_discounted_returns_random = random_tester.run_k_shot_exp()
 
     plt.figure('K Shot: Testing Curves')
     # plt.plot([i for i in range(args.K_shot_batch_num + 1)], avg_discounted_returns_pretrained, color=np.array([0.,0.,1.]), label='Pre-Trained')
     # plt.plot([i for i in range(args.K_shot_batch_num + 1)], avg_discounted_returns_metalearned, color=np.array([0.,1.,0.]), label='Meta-Learned')
     # plt.plot([i for i in range(args.K_shot_batch_num + 1)], avg_discounted_returns_random, color=np.array([0.,0.,0.]), label='Random')
-    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_pretrained, 0).tolist(), torch.std(avg_discounted_returns_pretrained, 0).tolist(), color=np.array([0.,0.,1.]), label='Pre-Trained', capsize=5, capthick=2)
+    # plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_pretrained, 0).tolist(), torch.std(avg_discounted_returns_pretrained, 0).tolist(), color=np.array([0.,0.,1.]), label='Pre-Trained', capsize=5, capthick=2)
     plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_metalearned, 0).tolist(), torch.std(avg_discounted_returns_metalearned, 0).tolist(), color=np.array([0.,1.,0.]), label='Meta-Learned', capsize=5, capthick=2)
-    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_random, 0).tolist(), torch.std(avg_discounted_returns_random, 0).tolist(), color=np.array([0.,0.,0.]), label='Random', capsize=5, capthick=2)
+    # plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_random, 0).tolist(), torch.std(avg_discounted_returns_random, 0).tolist(), color=np.array([0.,0.,0.]), label='Random', capsize=5, capthick=2)
 
     plt.xlabel('Gradient Descent Iteration Number')
     plt.ylabel('Average Discounted Return')
@@ -259,18 +316,18 @@ def k_shot_experiments(args):
     # plt.show()
 
 
-    plt.figure('K Shot: Difference between Metalearned and Pretrained')
+    # plt.figure('K Shot: Difference between Metalearned and Pretrained')
 
-    plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_metalearned-avg_discounted_returns_pretrained, 0).tolist(), torch.std(avg_discounted_returns_metalearned-avg_discounted_returns_pretrained, 0).tolist(), color=np.array([0.,0.,0.]), capsize=5, capthick=2)
+    # plt.errorbar([i for i in range(args.K_shot_batch_num + 1)], torch.mean(avg_discounted_returns_metalearned-avg_discounted_returns_pretrained, 0).tolist(), torch.std(avg_discounted_returns_metalearned-avg_discounted_returns_pretrained, 0).tolist(), color=np.array([0.,0.,0.]), capsize=5, capthick=2)
 
-    plt.xlabel('Gradient Descent Iteration Number')
-    plt.ylabel('Average Discounted Return Difference')
-    plt.title('K Shot: Difference between Metalearned and Pretrained')
-    plt.savefig(kshot_fig_path2)
+    # plt.xlabel('Gradient Descent Iteration Number')
+    # plt.ylabel('Average Discounted Return Difference')
+    # plt.title('K Shot: Difference between Metalearned and Pretrained')
+    # plt.savefig(kshot_fig_path2)
     # plt.show()
 
     #save torch tensor results to combine with other experiments
-    torch.save(avg_discounted_returns_pretrained, result_data_path + 'pretrained')
+    # torch.save(avg_discounted_returns_pretrained, result_data_path + 'pretrained')
     torch.save(avg_discounted_returns_metalearned, result_data_path + 'metalearned')
     return
 
@@ -280,7 +337,7 @@ def main(args):
         #Get a starting state using MAML
         train_meta_learning_model(args)
         #Get a starting state using Pretraining
-        train_pretrained_model(args)
+        # train_pretrained_model(args)
 
     if args.exp_type == 'KSHOT':
         k_shot_experiments(args)
@@ -348,7 +405,18 @@ if __name__ == '__main__':
         help='start training from this batch number - the model file should exist in save folder')
 
 
+    #arguments for organized sampling
+    parser.add_argument('--sampling-type', type=str, default='rand',
+        help='Type of task sampling to be used: rand|uni')
+    parser.add_argument('--points-per-dim', type=int, default=-1,
+        help='Points along each dimension (if `uni`)')    
 
+
+    #final meta-learned model testing params
+    parser.add_argument('--testing-mbs', type=int, default=-1,
+        help='Number of random tasks to sample for testing final Meta-Learned model')
+    parser.add_argument('--testing-fbs', type=int, default=-1,
+        help='Number of episodes in each random task to sample for testing final Meta-Learned model')      
 
     # General Arguments for K shot testing
     # Note that the exp type should be KSHOT for it
@@ -359,8 +427,9 @@ if __name__ == '__main__':
     parser.add_argument('--K-shot-num-tasks', type=int, default=50,
         help='Number of tasks to test over to get variance')
 
-
-
+    #random seed
+    parser.add_argument('--random-seed', type=int, default=47,
+        help='Random Seed for torch init of policy network')
 
     args = parser.parse_args()
 
@@ -381,7 +450,7 @@ if __name__ == '__main__':
     "ls_max_steps": args.ls_max_steps,
     "ls_backtrack_ratio": args.ls_backtrack_ratio
     }
-    # experiment.log_parameters(hyper_params)
+    experiment.log_parameters(hyper_params)
     
     # Create logs and saves folder if they don't exist
     if not os.path.exists('./logs'):

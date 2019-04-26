@@ -35,9 +35,38 @@ class Navigation2DEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def sample_tasks(self, num_tasks):
-        goals = self.np_random.uniform(-0.5, 0.5, size=(num_tasks, 2))
-        tasks = [{'goal': goal} for goal in goals]
+    def sample_tasks(self, num_tasks, sampling_type, points_per_dim=-1):
+        if sampling_type == 'rand':
+            goals = self.np_random.uniform(-0.5, 0.5, size=(num_tasks, 2))
+            tasks = [{'goal': goal} for goal in goals]
+        elif sampling_type == 'uni':
+            assert int(num_tasks) == int(points_per_dim**2), 'Number of tasks(mbs) should match the points per dimension if using `uni`'
+            goals = np.zeros((points_per_dim*points_per_dim, 2))
+            points_dim = np.linspace(-0.5, 0.5, num=points_per_dim)
+            
+            counter =  0
+            for i in range(points_per_dim):
+                for j in range(points_per_dim):
+                    goals[counter, 0] = points_dim[i]
+                    goals[counter, 1] = points_dim[j]
+                    counter = counter + 1
+
+            tasks = [{'goal': goal} for goal in goals]
+        elif sampling_type == 'unirand':
+            assert int(num_tasks) == int(points_per_dim**2), 'Number of tasks(mbs) should match the points per dimension if using `unirand`'
+            goals = np.zeros((points_per_dim*points_per_dim, 2))
+            points_dim, pd_step = np.linspace(-0.5, 0.5, endpoint=False, retstep=True, num=points_per_dim)
+
+            counter =  0
+            for i in range(points_per_dim):
+                for j in range(points_per_dim):
+                    goals[counter, 0] = points_dim[i] + np.random.uniform(0, pd_step)
+                    goals[counter, 1] = points_dim[j] + np.random.uniform(0, pd_step)
+                    counter = counter + 1
+
+            tasks = [{'goal': goal} for goal in goals]
+        else:
+            assert False, 'Sampling type should be `uni` or `rand` or `unirand`. Given: `{}`'.format(sampling_type)
         return tasks
 
     def reset_task(self, task):

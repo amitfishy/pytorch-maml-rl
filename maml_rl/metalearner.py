@@ -86,21 +86,28 @@ class MetaLearner(object):
 
         return params
 
-    def sample(self, tasks, first_order=False):
+    def sample(self, tasks, first_order=False, no_update=False):
         """Sample trajectories (before and after the update of the parameters) 
         for all the tasks `tasks`.
         """
         episodes = []
-        for task in tasks:
-            self.sampler.reset_task(task)
-            train_episodes = self.sampler.sample(self.policy,
-                gamma=self.gamma, device=self.device)
+        if no_update:
+            for task in tasks:
+                self.sampler.reset_task(task)
+                train_episodes = self.sampler.sample(self.policy,
+                    gamma=self.gamma, device=self.device)
+                episodes.append(train_episodes)
+        else:
+            for task in tasks:
+                self.sampler.reset_task(task)
+                train_episodes = self.sampler.sample(self.policy,
+                    gamma=self.gamma, device=self.device)
 
-            params = self.adapt(train_episodes, first_order=first_order)
+                params = self.adapt(train_episodes, first_order=first_order)
 
-            valid_episodes = self.sampler.sample(self.policy, params=params,
-                gamma=self.gamma, device=self.device)
-            episodes.append((train_episodes, valid_episodes))
+                valid_episodes = self.sampler.sample(self.policy, params=params,
+                    gamma=self.gamma, device=self.device)
+                episodes.append((train_episodes, valid_episodes))
         return episodes
 
     def sample_for_pretraining(self, tasks, first_order=False):
